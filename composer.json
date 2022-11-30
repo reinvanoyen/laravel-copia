@@ -1,0 +1,49 @@
+{
+    "name": "reinvanoyen/laravel-copia",
+    "description": "E-commerce functionality for Laravel applications",
+    "license": "MIT",
+    "keywords": [
+        "ecommerce",
+        "cart",
+        "shoppingcart",
+        "shop",
+        "webshop",
+        "shopping"
+    ],
+    "authors": [
+        {
+            "name": "Rein Van Oyen",
+            "email": "reinvanoyen@gmail.com",
+            "homepage": "https://reinvanoyen.be",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^7.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "ReinVanOyen\\Copia\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ReinVanOyen\\Copia\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ReinVanOyen\\Copia\\CopiaServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": [
+            "./vendor/bin/phpunit -c phpunit.xml"
+        ]
+    }
+}
