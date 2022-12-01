@@ -14,7 +14,7 @@ class Shipping implements Fulfilment
 
     public function getCost(CartManager $cart): float
     {
-        return 7;
+        return (count($cart->items()) > 3 ? 5 : 10);
     }
 
     public function getTitle(): string

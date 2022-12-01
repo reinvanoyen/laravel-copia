@@ -3,15 +3,16 @@
 namespace ReinVanOyen\Copia\Cart;
 
 use Illuminate\Session\SessionManager;
-use Illuminate\Support\Str;
 use ReinVanOyen\Copia\Contracts\Buyable;
 use ReinVanOyen\Copia\Contracts\Customer;
 use ReinVanOyen\Copia\Contracts\Fulfilment;
+use ReinVanOyen\Copia\Contracts\Orderable;
+use ReinVanOyen\Copia\Contracts\OrderCreator;
 use ReinVanOyen\Copia\Fulfilment\Shipping;
 use ReinVanOyen\Copia\Models\Cart;
 use ReinVanOyen\Copia\Models\CartItem;
-use Illuminate\Contracts\Events\Dispatcher;
 use ReinVanOyen\Copia\Models\Order;
+use Illuminate\Contracts\Events\Dispatcher;
 
 class CartManager
 {
@@ -26,18 +27,25 @@ class CartManager
     private $events;
 
     /**
+     * @var OrderCreator $orderCreator
+     */
+    private $orderCreator;
+
+    /**
      * @var $cart
      */
     private $cart;
 
     /**
      * @param SessionManager $sessions
-     * @param Dispatcher $dispatcher
+     * @param Dispatcher $events
+     * @param OrderCreator $orderCreator
      */
-    public function __construct(SessionManager $sessions, Dispatcher $events)
+    public function __construct(SessionManager $sessions, Dispatcher $events, OrderCreator $orderCreator)
     {
         $this->sessions = $sessions;
         $this->events = $events;
+        $this->orderCreator = $orderCreator;
         $this->restore();
     }
 
@@ -75,6 +83,7 @@ class CartManager
         $stock = $buyable->getBuyableStockWorker();
 
         if (! $stock->isAvailable($buyable, $quantity)) {
+            dd('Out of stock');
             return;
         }
 
@@ -220,41 +229,15 @@ class CartManager
 
     /**
      * @param Customer $customer
-     * @return Order
+     * @return Orderable|null
      */
-    public function placeOrder(Customer $customer): Order
+    public function createOrder(Customer $customer): ?Orderable
     {
-        $order = new Order();
-
-        // Generate an order id
-        $order->order_id = Str::random(12);
-
-        // Copy costs
-        $order->total = $this->getTotal();
-        $order->subtotal = $this->getSubTotal();
-        $order->reduction = $this->getReduction();
-        $order->fulfilment_cost = $this->getFulfilmentCost();
-
-        // Store the fulfilment method
-        $order->fulfilment_id = ($this->getFulfilment() ? $this->getFulfilment()->getId() : null);
-
-        // Associate the order with the customer
-        $order->customer()->associate($customer);
-        $order->save();
-
-        foreach ($this->items() as $item) {
-
-            $originalAttrs = $item->getAttributes();
-
-            $order->orderItems()->create([
-                'buyable_id' => $originalAttrs['buyable_id'],
-                'buyable_type' => $originalAttrs['buyable_type'],
-                'quantity' => $originalAttrs['quantity'],
-            ]);
+        if (! count($this->items())) {
+            return null;
         }
 
-        $this->events->dispatch('copia.order.created', $order);
-        return $order;
+        return $this->orderCreator->createOrder($this, $customer);
     }
 
     /**

@@ -6,26 +6,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use ReinVanOyen\Copia\Contracts\Orderable;
 
-class Order extends Model implements Orderable
+class Stock extends Model implements Orderable
 {
     use HasFactory;
 
-    protected $table = 'orders';
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
-    }
+    protected $table = 'stocks';
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function orderItems()
+    public function stockItems()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(StockItem::class);
     }
 
     /**
@@ -33,8 +25,8 @@ class Order extends Model implements Orderable
      */
     public function delete()
     {
-        foreach ($this->orderItems as $orderItem) {
-            $orderItem->delete();
+        foreach ($this->stockItems as $stockItem) {
+            $stockItem->delete();
         }
 
         return parent::delete();

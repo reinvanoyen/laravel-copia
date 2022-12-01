@@ -2,9 +2,14 @@
 
 namespace ReinVanOyen\Copia;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use ReinVanOyen\Copia\Cart\CartManager;
+use ReinVanOyen\Copia\Contracts\OrderCreator;
 use ReinVanOyen\Copia\Contracts\Payment;
+use ReinVanOyen\Copia\Models\Order;
+use ReinVanOyen\Copia\Payment\NullPayment;
+use ReinVanOyen\Copia\Order\DefaultOrderCreator;
 
 class CopiaServiceProvider extends ServiceProvider
 {
@@ -16,7 +21,8 @@ class CopiaServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(CartManager::class, CartManager::class);
-        $this->app->bind(Payment::class, config('copia.payment'));
+        $this->app->bind(Payment::class, config('copia.payment', NullPayment::class));
+        $this->app->bind(OrderCreator::class, config('copia.orderCreator', DefaultOrderCreator::class));
     }
 
     /**
@@ -27,9 +33,7 @@ class CopiaServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPublishes();
-        //$this->loadRoutes();
-        //$this->loadViews();
-        //$this->loadTranslations();
+        $this->registerListeners();
     }
 
     /**
@@ -47,27 +51,21 @@ class CopiaServiceProvider extends ServiceProvider
     }
 
     /**
-     *
+     * @return void
      */
-    private function loadRoutes()
+    private function registerListeners()
     {
-        $this->loadRoutesFrom(__DIR__.'/routes/api.php');
-        $this->loadRoutesFrom(__DIR__.'/routes/web.php');
-    }
+        Event::listen('copia.order.created', function (Order $order) {
+            foreach ($order->orderItems as $item) {
 
-    /**
-     *
-     */
-    private function loadViews()
-    {
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'cmf');
-    }
+                $buyable = $item->buyable;
+                $qty = $item->quantity;
+                $stock = $buyable->getBuyableStockWorker();
 
-    /**
-     *
-     */
-    private function loadTranslations()
-    {
-        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'cmf');
+                $stock->decrement($buyable, $qty);
+
+                app(CartManager::class)->clear();
+            }
+        });
     }
 }
