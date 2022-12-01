@@ -173,11 +173,13 @@ class CartManager
      */
     public function getFulfilment(): ?Fulfilment
     {
-        if ($this->cart->fulfilment === 'shipping') {
-            return new Shipping();
+        $fulfilments = config('copia.fulfilments');
+
+        if ( !isset($fulfilments[$this->cart->fulfilment])) {
+            return null;
         }
 
-        return null;
+        return app($fulfilments[$this->cart->fulfilment]);
     }
 
     /**
