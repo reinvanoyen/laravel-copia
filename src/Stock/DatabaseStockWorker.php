@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace ReinVanOyen\Copia\Stock;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
 use ReinVanOyen\Copia\Contracts\Buyable;
 use ReinVanOyen\Copia\Contracts\StockWorker;
@@ -13,56 +15,96 @@ class DatabaseStockWorker implements StockWorker
     /**
      * @var string $hid
      */
-    private $hid;
+    private string $hid;
 
     /**
      * @var Stock $stock
      */
-    private $stock;
+    private Stock $stock;
 
     /**
-     * @param string $hid
+     * @var Dispatcher $events
      */
-    public function __construct(string $hid)
+    private Dispatcher $events;
+
+    /**
+     * @param string $stock
+     * @param Dispatcher $events
+     */
+    public function __construct(string $stock, Dispatcher $events)
     {
-        $this->hid = $hid;
+        $this->hid = $stock;
         $this->stock = $this->getStock();
+        $this->events = $events;
     }
 
-    public function isAvailable(Buyable $buyable, float $quantity = 1): bool
+    /**
+     * @param Buyable $buyable
+     * @param int $quantity
+     * @return bool
+     */
+    public function isAvailable(Buyable $buyable, int $quantity = 1): bool
     {
         return ($this->getQuantity($buyable) >= $quantity);
     }
 
-    public function increment(Buyable $buyable, float $quantity = 1)
+    /**
+     * @param Buyable $buyable
+     * @param int $quantity
+     * @return void
+     */
+    public function increment(Buyable $buyable, int $quantity = 1)
     {
         $item = $this->getStockItem($buyable);
 
         if ($item) {
             $item->quantity = $item->quantity + $quantity;
             $item->save();
+            $this->events->dispatch('copia.stock.quantity', $item);
         }
     }
 
-    public function decrement(Buyable $buyable, float $quantity = 1)
+    /**
+     * @param Buyable $buyable
+     * @param int $quantity
+     * @return void
+     */
+    public function decrement(Buyable $buyable, int $quantity = 1)
     {
         $item = $this->getStockItem($buyable);
 
         if ($item) {
             $item->quantity = $item->quantity - $quantity;
             $item->save();
+            $this->events->dispatch('copia.stock.quantity', $item);
         }
     }
 
+    /**
+     * @param Buyable $buyable
+     * @param int $quantity
+     * @return void
+     */
+    public function setQuantity(Buyable $buyable, int $quantity)
+    {
+        $item = $this->getStockItem($buyable);
+
+        if ($item) {
+            $item->quantity = $quantity;
+            $item->save();
+            $this->events->dispatch('copia.stock.quantity', $item);
+        }
+    }
+
+    /**
+     * @param Buyable $buyable
+     * @return int
+     */
     public function getQuantity(Buyable $buyable): int
     {
         $item = $this->getStockItem($buyable);
 
-        if (! $item) {
-            return 0;
-        }
-
-        return $item->quantity;
+        return ($item ? $item->quantity : 0);
     }
 
     /**

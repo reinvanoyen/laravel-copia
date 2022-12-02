@@ -7,6 +7,6 @@ use ReinVanOyen\Copia\Cart\CartManager;
 
 interface OrderCreator
 {
-    public function __construct(Dispatcher $events);
+    public function __construct(OrderIdGenerator $generator, Dispatcher $events);
     public function createOrder(CartManager $cart, Customer $customer): Orderable;
 }

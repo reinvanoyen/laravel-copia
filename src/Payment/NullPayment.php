@@ -5,6 +5,7 @@ namespace ReinVanOyen\Copia\Payment;
 use Illuminate\Contracts\Events\Dispatcher;
 use ReinVanOyen\Copia\Contracts\Orderable;
 use ReinVanOyen\Copia\Contracts\Payment;
+use ReinVanOyen\Copia\Order\OrderStatus;
 
 class NullPayment implements Payment
 {
@@ -28,6 +29,9 @@ class NullPayment implements Payment
     public function pay(Orderable $order)
     {
         // Payment complete
-        $this->dispatcher->fire('copia.order.paid', $order);
+        $order->payment_status = PaymentStatus::PAID;
+        $order->save();
+        // Dispatch payment complete event
+        $this->dispatcher->dispatch('copia.payment.complete', $order);
     }
 }

@@ -1,35 +1,40 @@
 <?php
+declare(strict_types=1);
 
 namespace ReinVanOyen\Copia\Cart;
 
 use Illuminate\Session\SessionManager;
 use ReinVanOyen\Copia\Contracts\Buyable;
+use ReinVanOyen\Copia\Contracts\CartStorage;
 use ReinVanOyen\Copia\Contracts\Customer;
 use ReinVanOyen\Copia\Contracts\Fulfilment;
 use ReinVanOyen\Copia\Contracts\Orderable;
 use ReinVanOyen\Copia\Contracts\OrderCreator;
-use ReinVanOyen\Copia\Fulfilment\Shipping;
 use ReinVanOyen\Copia\Models\Cart;
 use ReinVanOyen\Copia\Models\CartItem;
-use ReinVanOyen\Copia\Models\Order;
 use Illuminate\Contracts\Events\Dispatcher;
 
 class CartManager
 {
     /**
+     * @var CartStorage $cartStorage
+     */
+    private CartStorage $cartStorage;
+
+    /**
      * @var SessionManager $sessions
      */
-    private $sessions;
+    private SessionManager $sessions;
 
     /**
      * @var Dispatcher $events
      */
-    private $events;
+    private Dispatcher $events;
 
     /**
      * @var OrderCreator $orderCreator
      */
-    private $orderCreator;
+    private OrderCreator $orderCreator;
 
     /**
      * @var $cart
@@ -41,8 +46,9 @@ class CartManager
      * @param Dispatcher $events
      * @param OrderCreator $orderCreator
      */
-    public function __construct(SessionManager $sessions, Dispatcher $events, OrderCreator $orderCreator)
+    public function __construct(CartStorage $cartStorage, SessionManager $sessions, Dispatcher $events, OrderCreator $orderCreator)
     {
+        $this->cartStorage = $cartStorage;
         $this->sessions = $sessions;
         $this->events = $events;
         $this->orderCreator = $orderCreator;
@@ -54,12 +60,23 @@ class CartManager
      */
     public function restore()
     {
+        if ($this->cart) {
+            return;
+        }
+
+        // Get the cart from the session
+        $this->cart = $this->cartStorage->retrieve();
+
+        if ($this->cart) {
+            $this->events->dispatch('copia.cart.restored', $this->cart);
+            return;
+        }
+
         if ($this->sessions->has('cartId')) {
             $cart = Cart::find($this->sessions->get('cartId'));
 
             if ($cart) {
                 $this->cart = $cart;
-                $this->events->dispatch('copia.cart.restored', $this->cart);
                 return;
             }
         }
@@ -68,9 +85,12 @@ class CartManager
         $this->cart = new Cart();
         $this->cart->save();
 
-        // Store the newly create cart id in session
-        $this->sessions->put('cartId', $this->cart->id);
+        // Store the cart
+        $this->cartStorage->store($this->cart);
         $this->events->dispatch('copia.cart.created', $this->cart);
+
+        // Set the default fulfilment method on the newly created cart
+        $this->setFulfilment(config('copia.fulfilment.default'));
     }
 
     /**
@@ -118,11 +138,31 @@ class CartManager
     {
         $cartItem = $this->getCartItemFromBuyable($buyable);
 
+        if ($quantity <= 0) {
+            $this->remove($buyable);
+            return;
+        }
+
         if ($cartItem) {
-            $cartItem->quantity = $cartItem->quantity + $quantity;
+            $cartItem->quantity = $quantity;
             $cartItem->save();
             $this->events->dispatch('copia.cart.quantity', $cartItem);
         }
+    }
+
+    /**
+     * @param Buyable $buyable
+     * @return int
+     */
+    public function getQuantity(Buyable $buyable): int
+    {
+        $cartItem = $this->getCartItemFromBuyable($buyable);
+
+        if ($cartItem) {
+            return $cartItem->quantity;
+        }
+
+        return 0;
     }
 
     /**
@@ -158,11 +198,18 @@ class CartManager
     }
 
     /**
-     * @param Fulfilment $fulfilment
-     * @return void
+     * @param string $fulfilmentHid
+     * @return void|null
      */
-    public function setFulfilment(Fulfilment $fulfilment)
+    public function setFulfilment(string $fulfilmentHid)
     {
+        $fulfilments = config('copia.fulfilment.methods');
+
+        if ( !isset($fulfilments[$fulfilmentHid])) {
+            return null;
+        }
+
+        $fulfilment = app(config('copia.fulfilment.methods.'.$fulfilmentHid));
         $this->cart->fulfilment = $fulfilment->getId();
         $this->cart->save();
         $this->events->dispatch('copia.cart.fulfilment', $fulfilment);
@@ -173,7 +220,7 @@ class CartManager
      */
     public function getFulfilment(): ?Fulfilment
     {
-        $fulfilments = config('copia.fulfilments');
+        $fulfilments = config('copia.fulfilment.methods');
 
         if ( !isset($fulfilments[$this->cart->fulfilment])) {
             return null;

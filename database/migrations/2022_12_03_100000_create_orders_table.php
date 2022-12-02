@@ -19,11 +19,12 @@ class CreateOrdersTable extends Migration
             $table->timestamps();
 
             $table->string('order_id');
-            $table->string('payment_id')->nullable();
-            $table->string('fulfilment_id')->nullable();
-
             $table->integer('status')->nullable();
+
+            $table->string('payment_id')->nullable();
             $table->integer('payment_status')->nullable();
+
+            $table->string('fulfilment')->nullable();
             $table->integer('fulfilment_status')->nullable();
 
             $table->string('total')->nullable();

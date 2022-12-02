@@ -6,20 +6,20 @@ namespace ReinVanOyen\Copia\Fulfilment;
 use ReinVanOyen\Copia\Cart\CartManager;
 use ReinVanOyen\Copia\Contracts\Fulfilment;
 
-class Shipping implements Fulfilment
+class PickUp implements Fulfilment
 {
     public function getId()
     {
-        return 'shipping';
+        return 'pickup';
     }
 
     public function getCost(CartManager $cart): float
     {
-        return (count($cart->items()) >= 3 ? 5 : 10);
+        return 0;
     }
 
     public function getTitle(): string
     {
-        return 'Shipping';
+        return 'Pickup';
     }
 }
