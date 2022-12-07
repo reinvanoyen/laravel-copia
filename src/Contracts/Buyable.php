@@ -25,6 +25,11 @@ interface Buyable
     public function getBuyablePrice(): float;
 
     /**
+     * @return float
+     */
+    public function getBuyableWeight(): float;
+
+    /**
      * @return StockWorker
      */
     public function getBuyableStockWorker(): StockWorker;

@@ -5,7 +5,10 @@ namespace ReinVanOyen\Copia\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
+use ReinVanOyen\Copia\Contracts\Customer as CustomerInterface;
+use ReinVanOyen\Copia\Contracts\Fulfilment;
 use ReinVanOyen\Copia\Contracts\Orderable;
+use ReinVanOyen\Copia\Fulfilment\FulfilmentManager;
 use ReinVanOyen\Copia\Payment\PaymentStatus;
 
 class Order extends Model implements Orderable
@@ -51,6 +54,28 @@ class Order extends Model implements Orderable
     }
 
     /**
+     * @return float
+     */
+    public function getWeight(): float
+    {
+        $weight = 0;
+
+        foreach ($this->getItems() as $item) {
+            $weight += $item->quantity * $item->buyable->getBuyableWeight();
+        }
+
+        return $weight;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getItems()
+    {
+        return $this->orderItems;
+    }
+
+    /**
      * @param string $id
      * @return void
      */
@@ -66,6 +91,37 @@ class Order extends Model implements Orderable
     public function getOrderId(): string
     {
         return $this->order_id;
+    }
+
+    /**
+     * @return Fulfilment|null
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     */
+    public function getFulfilment(): ?Fulfilment
+    {
+        return app(FulfilmentManager::class)
+            ->get($this->fulfilment);
+    }
+
+    /**
+     * @return CustomerInterface
+     */
+    public function getCustomer(): CustomerInterface
+    {
+        return $this->customer;
+    }
+
+    /**
+     * @param int $fulfilmentStatus
+     * @return void
+     */
+    public function setFulfilmentStatus(int $fulfilmentStatus)
+    {
+        $this->fulfilment_status = $fulfilmentStatus;
+        $this->save();
+
+        Event::dispatch('copia.fulfilment.status.change', $this);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace ReinVanOyen\Copia\Fulfilment;
 
 use ReinVanOyen\Copia\Cart\CartManager;
 use ReinVanOyen\Copia\Contracts\Fulfilment;
+use ReinVanOyen\Copia\Contracts\Orderable;
 
 class Shipping implements Fulfilment
 {
@@ -21,5 +22,15 @@ class Shipping implements Fulfilment
     public function getTitle(): string
     {
         return 'Shipping';
+    }
+
+    /**
+     * @param Orderable $order
+     * @return mixed|void
+     */
+    public function process(Orderable $order)
+    {
+        // The order was unfulfilled
+        $order->setFulfilmentStatus(FulfilmentStatus::UNFULFILLED);
     }
 }

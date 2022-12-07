@@ -21,4 +21,10 @@ interface Fulfilment
      * @return string
      */
     public function getTitle(): string;
+
+    /**
+     * @param Orderable $orderable
+     * @return mixed
+     */
+    public function process(Orderable $orderable);
 }

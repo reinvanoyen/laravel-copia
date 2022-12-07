@@ -68,6 +68,12 @@ class CopiaServiceProvider extends ServiceProvider
     {
         Event::listen('copia.payment.complete', function (Order $order) {
 
+            $fulfilment = $order->getFulfilment();
+
+            if ($fulfilment) {
+                $fulfilment->process($order);
+            }
+
             foreach ($order->orderItems as $item) {
 
                 $buyable = $item->buyable;

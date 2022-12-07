@@ -10,6 +10,7 @@ use ReinVanOyen\Copia\Contracts\Customer;
 use ReinVanOyen\Copia\Contracts\Fulfilment;
 use ReinVanOyen\Copia\Contracts\Orderable;
 use ReinVanOyen\Copia\Contracts\OrderCreator;
+use ReinVanOyen\Copia\Fulfilment\FulfilmentManager;
 use ReinVanOyen\Copia\Models\Cart;
 use ReinVanOyen\Copia\Models\CartItem;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -220,13 +221,8 @@ class CartManager
      */
     public function getFulfilment(): ?Fulfilment
     {
-        $fulfilments = config('copia.fulfilment.methods');
-
-        if ( !isset($fulfilments[$this->cart->fulfilment])) {
-            return null;
-        }
-
-        return app($fulfilments[$this->cart->fulfilment]);
+        return app(FulfilmentManager::class)
+            ->get($this->cart->fulfilment);
     }
 
     /**
