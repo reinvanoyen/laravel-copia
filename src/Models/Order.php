@@ -4,7 +4,9 @@ namespace ReinVanOyen\Copia\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Event;
 use ReinVanOyen\Copia\Contracts\Orderable;
+use ReinVanOyen\Copia\Payment\PaymentStatus;
 
 class Order extends Model implements Orderable
 {
@@ -38,5 +40,47 @@ class Order extends Model implements Orderable
         }
 
         return parent::delete();
+    }
+
+    /**
+     * @return float
+     */
+    public function getTotal(): float
+    {
+        return $this->total;
+    }
+
+    /**
+     * @param string $id
+     * @return void
+     */
+    public function setPaymentId(string $id)
+    {
+        $this->payment_id = $id;
+        $this->save();
+    }
+
+    /**
+     * @return string
+     */
+    public function getOrderId(): string
+    {
+        return $this->order_id;
+    }
+
+    /**
+     * @param int $paymentStatus
+     * @return void
+     */
+    public function setPaymentStatus(int $paymentStatus)
+    {
+        $this->payment_status = $paymentStatus;
+        $this->save();
+
+        if ($paymentStatus === PaymentStatus::PAID) {
+            Event::dispatch('copia.payment.completed', $this);
+        } else {
+            Event::dispatch('copia.payment.status.change', $this);
+        }
     }
 }

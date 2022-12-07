@@ -66,10 +66,6 @@ class CopiaServiceProvider extends ServiceProvider
      */
     private function registerListeners()
     {
-        Event::listen('copia.order.created', function (Order $order) {
-            app(Payment::class)->pay($order);
-        });
-
         Event::listen('copia.payment.complete', function (Order $order) {
 
             foreach ($order->orderItems as $item) {

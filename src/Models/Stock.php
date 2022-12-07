@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use ReinVanOyen\Copia\Contracts\Orderable;
 
-class Stock extends Model implements Orderable
+class Stock extends Model
 {
     use HasFactory;
 
