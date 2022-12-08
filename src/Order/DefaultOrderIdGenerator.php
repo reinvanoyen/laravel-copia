@@ -11,6 +11,6 @@ class DefaultOrderIdGenerator implements OrderIdGenerator
 {
     public function generate(CartManager $cart): string
     {
-        return Str::random(12);
+        return date('d_mY').Str::random(8);
     }
 }

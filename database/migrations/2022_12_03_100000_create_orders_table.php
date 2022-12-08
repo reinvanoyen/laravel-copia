@@ -26,6 +26,7 @@ class CreateOrdersTable extends Migration
 
             $table->string('fulfilment')->nullable();
             $table->integer('fulfilment_status')->nullable();
+            $table->json('fulfilment_data')->nullable();
 
             $table->string('total')->nullable();
             $table->string('subtotal')->nullable();

@@ -15,6 +15,9 @@ interface Orderable
     public function getFulfilment(): ?Fulfilment;
     public function setFulfilmentStatus(int $fulfilmentStatus);
 
+    public function getFulfilmentData(string $key);
+    public function setFulfilmentData(array $data);
+
     public function getWeight(): float;
     public function getItems();
 

@@ -17,6 +17,10 @@ class Order extends Model implements Orderable
 
     protected $table = 'orders';
 
+    protected $casts = [
+        'fulfilment_data' => 'array',
+    ];
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -122,6 +126,31 @@ class Order extends Model implements Orderable
         $this->save();
 
         Event::dispatch('copia.fulfilment.status.change', $this);
+    }
+
+    /**
+     * @param string $key
+     * @return mixed|null
+     */
+    public function getFulfilmentData(string $key)
+    {
+        return $this->fulfilment_data[$key] ?? null;
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     */
+    public function setFulfilmentData(array $data)
+    {
+        $originalData = $this->fulfilment_data;
+
+        foreach ($data as $key => $value) {
+            $originalData[$key] = $value;
+        }
+
+        $this->fulfilment_data = $data;
+        $this->save();
     }
 
     /**
