@@ -70,6 +70,7 @@ class CartManager
 
         if ($this->cart) {
             $this->events->dispatch('copia.cart.restored', $this->cart);
+            // @TODO fix event
             return;
         }
 
@@ -89,6 +90,7 @@ class CartManager
         // Store the cart
         $this->cartStorage->store($this->cart);
         $this->events->dispatch('copia.cart.created', $this->cart);
+        // @TODO fix event
 
         // Set the default fulfilment method on the newly created cart
         $this->setFulfilment(config('copia.fulfilment.default'));
@@ -116,6 +118,7 @@ class CartManager
             $cartItem->quantity = $cartItem->quantity + $quantity;
             $cartItem->save();
             $this->events->dispatch('copia.cart.quantity', $cartItem);
+            // @TODO fix event
             return;
         }
 
