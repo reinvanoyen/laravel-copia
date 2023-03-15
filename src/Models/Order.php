@@ -163,7 +163,8 @@ class Order extends Model implements Orderable
         $this->save();
 
         if ($paymentStatus === PaymentStatus::PAID) {
-            Event::dispatch('copia.payment.completed', $this);
+            Event::dispatch('copia.payment.complete', $this);
+            Event::dispatch('copia.payment.status.change', $this);
         } else {
             Event::dispatch('copia.payment.status.change', $this);
         }

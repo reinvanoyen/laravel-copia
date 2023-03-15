@@ -29,8 +29,6 @@ class NullPayment implements Payment
     {
         // Payment complete
         $order->setPaymentStatus(PaymentStatus::PAID);
-        // Dispatch payment complete event
-        $this->dispatcher->dispatch('copia.payment.complete', $order);
 
         return '/';
     }
