@@ -8,8 +8,10 @@ use ReinVanOyen\Copia\Contracts\Customer;
 use ReinVanOyen\Copia\Contracts\OrderIdGenerator;
 use ReinVanOyen\Copia\Contracts\Orderable;
 use ReinVanOyen\Copia\Contracts\OrderCreator;
+use ReinVanOyen\Copia\Fulfilment\FulfilmentStatus;
 use ReinVanOyen\Copia\Models\Order;
 use Illuminate\Contracts\Events\Dispatcher;
+use ReinVanOyen\Copia\Payment\PaymentStatus;
 
 class DefaultOrderCreator implements OrderCreator
 {
@@ -58,6 +60,9 @@ class DefaultOrderCreator implements OrderCreator
         // Associate the order with the customer
         $order->customer()->associate($customer);
         $order->save();
+
+        $order->setFulfilmentStatus(FulfilmentStatus::UNFULFILLED);
+        $order->setPaymentStatus(PaymentStatus::PENDING);
 
         foreach ($cart->items() as $item) {
             $originalAttrs = $item->getAttributes();
