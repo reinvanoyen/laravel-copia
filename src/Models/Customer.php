@@ -75,4 +75,12 @@ class Customer extends Model implements CustomerInterface
     {
         return $this->telephone ?? '';
     }
+
+    /**
+     * @return string
+     */
+    public function getNationalSecurityNumber(): string
+    {
+        return $this->national_security_number ?? '';
+    }
 }

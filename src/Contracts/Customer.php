@@ -12,4 +12,5 @@ interface Customer
     public function getCity(): string;
     public function getCountryISO(): string;
     public function getTelephoneNumber(): string;
+    public function getNationalSecurityNumber(): string;
 }
