@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace ReinVanOyen\Copia\Cart;
 
 use Illuminate\Session\SessionManager;
+use Illuminate\Contracts\Events\Dispatcher;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReinVanOyen\Copia\Contracts\Buyable;
 use ReinVanOyen\Copia\Contracts\CartStorage;
 use ReinVanOyen\Copia\Contracts\Customer;
@@ -13,7 +16,6 @@ use ReinVanOyen\Copia\Contracts\OrderCreator;
 use ReinVanOyen\Copia\Fulfilment\FulfilmentManager;
 use ReinVanOyen\Copia\Models\Cart;
 use ReinVanOyen\Copia\Models\CartItem;
-use Illuminate\Contracts\Events\Dispatcher;
 
 class CartManager
 {
@@ -43,6 +45,7 @@ class CartManager
     private $cart;
 
     /**
+     * @param CartStorage $cartStorage
      * @param SessionManager $sessions
      * @param Dispatcher $events
      * @param OrderCreator $orderCreator
@@ -59,7 +62,7 @@ class CartManager
     /**
      * @return void
      */
-    public function restore()
+    public function restore(): void
     {
         if ($this->cart) {
             return;
@@ -101,7 +104,7 @@ class CartManager
      * @param int $quantity
      * @return void
      */
-    public function add(Buyable $buyable, int $quantity = 1)
+    public function add(Buyable $buyable, int $quantity = 1): void
     {
         $stock = $buyable->getBuyableStockWorker();
 
@@ -138,7 +141,7 @@ class CartManager
      * @param int $quantity
      * @return void
      */
-    public function setQuantity(Buyable $buyable, int $quantity)
+    public function setQuantity(Buyable $buyable, int $quantity): void
     {
         $cartItem = $this->getCartItemFromBuyable($buyable);
 
@@ -173,7 +176,7 @@ class CartManager
      * @param Buyable $buyable
      * @return void
      */
-    public function remove(Buyable $buyable)
+    public function remove(Buyable $buyable): void
     {
         $cartItem = $this->getCartItemFromBuyable($buyable);
 
@@ -186,17 +189,20 @@ class CartManager
     /**
      * @return void
      */
-    public function clear()
+    public function clear(): void
     {
         $this->cart->delete();
         $this->sessions->forget('cartId');
+        $this->cart = null;
         $this->events->dispatch('copia.cart.cleared');
+
+        $this->restore();
     }
 
     /**
      * @return mixed
      */
-    public function items()
+    public function items(): mixed
     {
         return $this->cart->cartItems;
     }
@@ -220,7 +226,9 @@ class CartManager
     }
 
     /**
-     * @return void
+     * @return Fulfilment|null
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getFulfilment(): ?Fulfilment
     {
@@ -292,7 +300,7 @@ class CartManager
      * @param Buyable $buyable
      * @return mixed
      */
-    private function getCartItemFromBuyable(Buyable $buyable)
+    private function getCartItemFromBuyable(Buyable $buyable): mixed
     {
         return CartItem::where([
             'buyable_id' => $buyable->id,
